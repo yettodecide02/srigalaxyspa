@@ -1,0 +1,4 @@
+Secrets.json
+.env
+node_modules/
+frontend/
