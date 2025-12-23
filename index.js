@@ -3,7 +3,7 @@ const path = require("path");
 const cors = require("cors");
 require("dotenv").config();
 
-const { appendToSheet, getTodayRows } = require("./utils/sheets");
+const { appendAdminToSheet, appendToSheet, getTodayRows } = require("./utils/sheets");
 const { sendNotification } = require("./utils/sendNotification");
 const { exportToExcel } = require("./utils/exportExcel");
 const { sendWhatsAppMessage } = require("./utils/sendWhatsApp.js");
