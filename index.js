@@ -21,7 +21,7 @@ app.post("/api/submit", async (req, res) => {
   try {
     const { service, date, time, firstName, email, phone, message } = req.body;
 
-    if (!service || !date || !time || !firstName || !phone) {
+    if (!service || !date || !firstName || !phone) {
       return res.status(400).json({
         success: false,
         error:
