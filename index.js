@@ -251,7 +251,7 @@ app.get("/api/export-all", async (req, res) => {
   try {
     const rows = await getAllRows();
 
-    if (!rows || rows.length <= 1) {
+    if (!rows || rows.length < 1) {
       return res.status(404).json({
         success: false,
         message: "No data found in the sheet.",
