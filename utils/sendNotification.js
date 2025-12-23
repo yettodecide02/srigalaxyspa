@@ -75,7 +75,7 @@ async function sendNotification(formData) {
                 : ""
             }
             <div class="footer">
-              <p>This is an automated notification from Relax Thai Spa booking system.</p>
+              <p>This is an automated notification from Sri Galaxy Spa booking system.</p>
               <p>Please respond to the customer as soon as possible.</p>
             </div>
           </div>
@@ -98,11 +98,11 @@ async function sendNotification(formData) {
       ${formData.message ? `Message: ${formData.message}` : ""}
 
       ---
-      This is an automated notification from Relax Thai Spa booking system.
+      This is an automated notification from Sri Galaxy Spa booking system.
     `;
 
     const mailOptions = {
-      from: `"Relax Thai Spa" <${process.env.NOTIFICATION_EMAIL}>`,
+      from: `"Sri Galaxt Spa" <${process.env.NOTIFICATION_EMAIL}>`,
       to: process.env.ADMIN_EMAIL,
       subject: `🎉 New Booking: ${formData.service} - ${formData.firstName}`,
       text: textContent,

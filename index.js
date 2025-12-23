@@ -101,6 +101,119 @@ app.post("/api/submit", async (req, res) => {
   }
 });
 
+app.post("/api/admin/submit", async (req, res) => {
+  try {
+    const {
+      name,
+      roomNo,
+      address,
+      contact,
+      paymentMode,
+      timeIn,
+      timeOut,
+      therapyName,
+      duration,
+      therapist,
+      date,
+      membership,
+    } = req.body;
+
+    if (!name || !date || !therapyName) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Please fill all required fields (name, date, therapyName).",
+      });
+    }
+
+    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+    if (!phoneRegex.test(contact)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid contact number format.",
+      });
+    }
+
+    const timestamp = new Date().toISOString();
+
+    const formData = {
+      timestamp,
+      name,
+      roomNo: roomNo || "",
+      address: address || "",
+      contact,
+      paymentMode: paymentMode || "",
+      timeIn: timeIn || "",
+      timeOut: timeOut || "",
+      therapyName,
+      duration: duration || "",
+      therapist: therapist || "",
+      date,
+      membership: membership || "",
+    };
+
+    const sheetResult = await appendAdminToSheet(formData);
+
+    if (!sheetResult.success) {
+      throw new Error(sheetResult.error);
+    }
+
+    try {
+      await sendNotification(formData);
+    } catch (notifError) {
+      console.error("Notification failed:", notifError.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Form saved successfully!",
+      data: {
+        id: sheetResult.rowNumber,
+        timestamp: formData.timestamp,
+      },
+    });
+  } catch (error) {
+    console.error("Error saving form:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error.",
+      details:
+        process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+});
+
+app.get("/api/admin/export", async (req, res) => {
+  try {
+    const rows = await getAllRows("admin");
+
+    if (!rows || rows.length <= 1) {
+      return res.status(404).json({
+        success: false,
+        message: "No admin data found",
+      });
+    }
+
+    const excelBuffer = await exportAdminExcel(rows);
+    const filename = `customervisits.xlsx`;
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    res.send(excelBuffer);
+  } catch (error) {
+    console.error("❌ Error exporting admin excel:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to export admin data",
+      error: error.message,
+    });
+  }
+});
+
 app.get("/api/export", async (req, res) => {
   try {
     const rows = await getTodayRows();
@@ -114,7 +227,7 @@ app.get("/api/export", async (req, res) => {
 
     const excelBuffer = await exportToExcel(rows);
     const today = new Date().toISOString().split("T")[0];
-    const filename = `relax-thai-spa-bookings-${today}.xlsx`;
+    const filename = `galaxy-spa-bookings-${today}.xlsx`;
 
     res.setHeader(
       "Content-Type",
@@ -145,7 +258,7 @@ app.get("/api/export-all", async (req, res) => {
     }
 
     const excelBuffer = await exportToExcel(rows);
-    const filename = `relax-thai-spa-bookings-all.xlsx`;
+    const filename = `galaxy-spa-bookings-all.xlsx`;
 
     res.setHeader(
       "Content-Type",
@@ -207,7 +320,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-  console.log(`Relax Thai Spa app listening at http://localhost:${port}`);
+  console.log(`Galaxy Spa app listening at http://localhost:${port}`);
 });
 
 process.on("SIGTERM", () => {

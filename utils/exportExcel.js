@@ -5,7 +5,7 @@ async function exportToExcel(rows) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Spa Bookings");
 
-    workbook.creator = "Relax Thai Spa";
+    workbook.creator = "Sri Galaxy Spa";
     workbook.created = new Date();
     workbook.modified = new Date();
 

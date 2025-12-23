@@ -58,6 +58,50 @@ async function appendToSheet(formData) {
   }
 }
 
+async function appendAdminToSheet(formData) {
+  try {
+    const sheets = await getGoogleSheetsClient();
+    const spreadsheetId = process.env.ADMIN_SHEET_ID;
+
+    const row = [
+      formData.timestamp,
+      formData.name,
+      formData.roomNo,
+      formData.address,
+      formData.contact,
+      formData.paymentMode,
+      formData.timeIn,
+      formData.timeOut,
+      formData.therapyName,
+      formData.duration,
+      formData.therapist,
+      formData.date,
+      formData.membership,
+    ];
+
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: "Sheet1!A:M",
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values: [row],
+      },
+    });
+
+    return {
+      success: true,
+      rowNumber: response.data.updates.updatedRows,
+      range: response.data.updates.updatedRange,
+    };
+  } catch (error) {
+    console.error("Error appending to sheet:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
 async function getTodayRows() {
   try {
     const sheets = await getGoogleSheetsClient();
@@ -118,10 +162,11 @@ async function initializeSheet() {
   }
 }
 
-async function getAllRows() {
+async function getAllRows(type) {
   try {
     const sheets = await getGoogleSheetsClient();
-    const spreadsheetId = process.env.SHEET_ID;
+    const spreadsheetId =
+      type === "admin" ? process.env.ADMIN_SHEET_ID : process.env.SHEET_ID;
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -137,6 +182,7 @@ async function getAllRows() {
 
 module.exports = {
   appendToSheet,
+  appendAdminToSheet,
   getTodayRows,
   initializeSheet,
   getAllRows,
