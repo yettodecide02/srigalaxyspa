@@ -20,7 +20,8 @@ app.use(express.static(path.join(__dirname, "dist")));
 app.post("/api/submit", async (req, res) => {
   try {
     const { service, date, time, firstName, email, phone, message } = req.body;
-
+    console.log(req.body);
+    
     if (!service || !date || !firstName || !phone) {
       return res.status(400).json({
         success: false,
@@ -218,7 +219,7 @@ app.get("/api/export", async (req, res) => {
   try {
     const rows = await getTodayRows();
 
-    if (!rows || rows.length <= 1) {
+    if (!rows || rows.length < 1) {
       return res.status(404).json({
         success: false,
         message: "No submissions found for today.",
