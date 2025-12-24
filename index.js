@@ -1,13 +1,19 @@
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
+const PDFDocument = require("pdfkit");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
-const { appendAdminToSheet, appendToSheet, getTodayRows } = require("./utils/sheets");
+const {
+  appendAdminToSheet,
+  appendToSheet,
+  getTodayRows,
+} = require("./utils/sheets");
 const { sendNotification } = require("./utils/sendNotification");
 const { exportToExcel } = require("./utils/exportExcel");
 const { sendWhatsAppMessage } = require("./utils/sendWhatsApp.js");
-const { getAllRows} = require("./utils/sheets");
+const { getAllRows } = require("./utils/sheets");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,13 +21,45 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "dist")));
+app.use(
+  express.static(path.join(__dirname, "dist"), {
+    immutable: true,
+    maxAge: "1y",
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith("index.html")) {
+        res.setHeader(
+          "Cache-Control",
+          "no-store, no-cache, must-revalidate, proxy-revalidate"
+        );
+      }
+    },
+  })
+);
+
+const adminAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
 
 app.post("/api/submit", async (req, res) => {
   try {
     const { service, date, time, firstName, email, phone, message } = req.body;
     console.log(req.body);
-    
+
     if (!service || !date || !firstName || !phone) {
       return res.status(400).json({
         success: false,
@@ -68,16 +106,16 @@ app.post("/api/submit", async (req, res) => {
 
     try {
       await sendNotification(formData);
+      const combinedMessage = `
+      👤 Name: ${firstName}
+      📞 Phone: ${phone}
+      🛠 Service: ${service}
+      📅 Date & Time: ${date} ${time}
+      💬 Message: ${message || "No message"}`;
       await sendWhatsAppMessage({
         to: process.env.ADMIN_WA_NUMBER,
         templateName: "form_submission_alert",
-        params: [
-          firstName,
-          phone,
-          service,
-          `${date} ${time}`,
-          message || "No message",
-        ],
+        params: [combinedMessage],
       });
     } catch (notifError) {
       console.error("WhatsApp notification failed:", notifError.message);
@@ -102,6 +140,19 @@ app.post("/api/submit", async (req, res) => {
   }
 });
 
+app.post("/api/admin/check-password", (req, res) => {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const { password } = req.body;
+  if (password === adminPassword) {
+    const token = jwt.sign({ role: "admin" }, process.env.JWT_SECRET);
+    res.status(200).json({ ok: true, token });
+  } else {
+    res.status(401).json({ ok: false, error: "Incorrect password" });
+  }
+});
+
+app.use("/api", adminAuth);
+
 app.post("/api/admin/submit", async (req, res) => {
   try {
     const {
@@ -122,8 +173,7 @@ app.post("/api/admin/submit", async (req, res) => {
     if (!name || !date || !therapyName) {
       return res.status(400).json({
         success: false,
-        error:
-          "Please fill all required fields (name, date, therapyName).",
+        error: "Please fill all required fields (name, date, therapyName).",
       });
     }
 
@@ -188,7 +238,7 @@ app.get("/api/admin/export", async (req, res) => {
   try {
     const rows = await getAllRows("admin");
 
-    if (!rows || rows.length <= 1) {
+    if (!rows || rows.length < 1) {
       return res.status(404).json({
         success: false,
         message: "No admin data found",
@@ -278,7 +328,6 @@ app.get("/api/export-all", async (req, res) => {
   }
 });
 
-
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -309,6 +358,10 @@ app.get("/api/stats", async (req, res) => {
 });
 
 app.get("*", (req, res) => {
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
