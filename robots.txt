@@ -1,0 +1,9 @@
+User-agent: *
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /src/
+
+Sitemap: https://www.srigalaxyspavizag.com/sitemap.xml
