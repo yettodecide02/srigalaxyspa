@@ -108,6 +108,58 @@ async function exportToExcel(rows) {
   }
 }
 
+async function exportAdminExcel(rows) {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Admin Submissions");
+
+    worksheet.columns = [
+      { header: "Timestamp", key: "timestamp", width: 20 },
+      { header: "Name", key: "name", width: 20 },
+      { header: "Room No", key: "roomNo", width: 10 },
+      { header: "Address", key: "address", width: 30 },
+      { header: "Contact", key: "contact", width: 15 },
+      { header: "Payment Mode", key: "paymentMode", width: 15 },
+      { header: "Time In", key: "timeIn", width: 12 },
+      { header: "Time Out", key: "timeOut", width: 12 },
+      { header: "Therapy Name", key: "therapyName", width: 20 },
+      { header: "Duration", key: "duration", width: 12 },
+      { header: "Therapist", key: "therapist", width: 20 },
+      { header: "Date", key: "date", width: 15 },
+      { header: "Membership", key: "membership", width: 15 },
+    ];
+
+    worksheet.getRow(1).font = { bold: true };
+
+    const dataRows = rows.slice(1);
+
+    dataRows.forEach((row) => {
+      worksheet.addRow({
+        timestamp: row[0],
+        name: row[1],
+        roomNo: row[2],
+        address: row[3],
+        contact: row[4],
+        paymentMode: row[5],
+        timeIn: row[6],
+        timeOut: row[7],
+        therapyName: row[8],
+        duration: row[9],
+        therapist: row[10],
+        date: row[11],
+        membership: row[12],
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
+  } catch (error) {
+    console.error("❌ Error generating admin Excel:", error);
+    throw new Error(error.message);
+  }
+}
+
 module.exports = {
   exportToExcel,
+  exportAdminExcel,
 };

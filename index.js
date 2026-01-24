@@ -11,7 +11,7 @@ const {
   getTodayRows,
 } = require("./utils/sheets");
 const { sendNotification } = require("./utils/sendNotification");
-const { exportToExcel } = require("./utils/exportExcel");
+const { exportToExcel, exportAdminExcel } = require("./utils/exportExcel");
 const { sendWhatsAppMessage } = require("./utils/sendWhatsApp.js");
 const { getAllRows } = require("./utils/sheets");
 
